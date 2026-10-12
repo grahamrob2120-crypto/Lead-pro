@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>Lead Pro | Never miss an opportunity again.</title>
+<style>
+:root{--navy:#111827;--blue:#2563eb;--light:#f3f6fb;--green:#15803d}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:var(--light);color:#172033}
+header{background:var(--navy);color:white;padding:24px 18px}
+header h1{margin:0;font-size:29px}
+header p{margin:8px 0 0;color:#cbd5e1}
+nav{display:flex;gap:8px;padding:12px;background:white;overflow-x:auto;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+nav button{white-space:nowrap;border:0;background:#e9eef7;padding:11px 13px;border-radius:9px;font-weight:bold}
+nav button.active{background:var(--blue);color:white}
+main{max-width:800px;margin:auto;padding:16px}
+section{display:none}
+section.active{display:block}
+.card{background:white;padding:17px;border-radius:13px;margin-bottom:14px;border:1px solid #e1e6ef;box-shadow:0 2px 5px #15223808}
+h2{font-size:22px;margin:5px 0 15px}
+h3{margin:0 0 8px}
+p{line-height:1.5}
+label{display:block;font-weight:bold;margin:13px 0 6px}
+input,textarea,select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;background:white}
+textarea{min-height:90px;resize:vertical}
+.primary{background:var(--blue);color:white;border:0;border-radius:9px;padding:13px 16px;font-weight:bold;font-size:15px;width:100%;margin-top:14px}
+.secondary{background:#e8eef8;border:0;padding:9px 12px;border-radius:7px;margin:5px 5px 0 0}
+.muted{color:#64748b;font-size:13px}
+.tag{display:inline-block;background:#e8f0ff;color:#1d4ed8;padding:5px 9px;border-radius:20px;font-size:12px;font-weight:bold}
+.price{font-size:19px;font-weight:bold;color:var(--green)}
+.stars{color:#d97706;font-size:18px}
+.empty{color:#64748b;padding:15px 0}
+footer{text-align:center;color:#64748b;font-size:12px;padding:25px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Lead Pro</h1>
+  <p>Never miss an opportunity again.</p>
+  <p>Find work. Hire help. Grow your business.</p>
+</header>
+
+<nav>
+  <button class="active" data-tab="jobs">Find Jobs</button>
+  <button data-tab="post">Post a Job</button>
+  <button data-tab="wanted">Help Wanted</button>
+  <button data-tab="providers">Providers</button>
+  <button data-tab="reviews">Reviews</button>
+</nav>
+
+<main>
+<section id="jobs" class="active">
+  <div class="card">
+    <h2>Find your next opportunity</h2>
+    <p>Browse jobs posted by customers and connect with potential clients.</p>
+    <label for="jobSearch">Search jobs</label>
+    <input id="jobSearch" placeholder="e.g. painting, cleaning, repairs">
+    <label for="jobCity">City</label>
+    <input id="jobCity" placeholder="e.g. Regina">
+  </div>
+  <div id="jobList"></div>
+</section>
+
+<section id="post">
+  <div class="card">
+    <h2>Post a Job</h2>
+    <p>Tell local service providers what you need done.</p>
+    <form id="jobForm">
+      <label for="jobTitle">Job title</label>
+      <input id="jobTitle" required placeholder="e.g. Paint my living room">
+      <label for="jobCategory">Category</label>
+      <select id="jobCategory">
+        <option>Painting</option><option>Cleaning</option>
+        <option>Home Repairs</option><option>Landscaping</option>
+        <option>Moving</option><option>Plumbing</option>
+        <option>Electrical</option><option>Other</option>
+      </select>
+      <label for="jobDescription">Job details</label>
+      <textarea id="jobDescription" required placeholder="Describe the work needed"></textarea>
+      <label for="jobLocation">City or area</label>
+      <input id="jobLocation" required placeholder="e.g. Regina, Saskatchewan">
+      <label for="jobBudget">Estimated budget (CAD $)</label>
+      <input id="jobBudget" type="number" min="0" placeholder="Optional">
+      <label for="jobContact">Contact email</label>
+      <input id="jobContact" type="email" required placeholder="you@example.com">
+      <button class="primary" type="submit">Publish Job</button>
+    </form>
+  </div>
+</section>
+
+<section id="wanted">
+  <div class="card">
+    <h2>Help Wanted</h2>
+    <p>Post the skills, services or help you're looking for.</p>
+    <form id="wantedForm">
+      <label for="wantedTitle">What do you need?</label>
+      <input id="wantedTitle" required placeholder="e.g. Looking for a reliable painter">
+      <label for="wantedDetails">Details</label>
+      <textarea id="wantedDetails" required placeholder="Describe what you're looking for"></textarea>
+      <label for="wantedCity">City or area</label>
+      <input id="wantedCity" required placeholder="Your location">
+      <label for="wantedContact">Contact email</label>
+      <input id="wantedContact" type="email" required placeholder="you@example.com">
+      <button class="primary" type="submit">Post Help Wanted</button>
+    </form>
+  </div>
+  <div id="wantedList"></div>
+</section>
+
+<section id="providers">
+  <div class="card">
+    <h2>Service Providers</h2>
+    <p>Discover providers and review their profiles.</p>
+    <p class="muted">Demo profiles are examples, not verified businesses.</p>
+  </div>
+  <div id="providerList"></div>
+  <div class="card">
+    <h3>Register as a provider</h3>
+    <form id="providerForm">
+      <label for="providerName">Business or provider name</label>
+      <input id="providerName" required>
+      <label for="providerService">Services offered</label>
+      <input id="providerService" required placeholder="e.g. Painting and drywall">
+      <label for="providerCity">City</label>
+      <input id="providerCity" required>
+      <label for="providerContact">Contact email</label>
+      <input id="providerContact" type="email" required>
+      <button class="primary" type="submit">Create Provider Profile</button>
+    </form>
+  </div>
+</section>
+
+<section id="reviews">
+  <div class="card">
+    <h2>Customer Reviews</h2>
+    <p>Rate your experience with a service provider from one to five stars.</p>
+    <form id="reviewForm">
+      <label for="reviewProvider">Provider</label>
+      <select id="reviewProvider" required></select>
+      <label for="reviewStars">Star rating</label>
+      <select id="reviewStars">
+        <option value="5">★★★★★ — Excellent</option>
+        <option value="4">★★★★ — Good</option>
+        <option value="3">★★★ — Average</option>
+        <option value="2">★★ — Poor</option>
+        <option value="1">★ — Very poor</option>
+      </select>
+      <label for="reviewText">Review</label>
+      <textarea id="reviewText" required placeholder="Describe your experience"></textarea>
+      <button class="primary" type="submit">Submit Review</button>
+    </form>
+  </div>
+  <div id="reviewList"></div>
+</section>
+</main>
+
+<footer>Lead Pro · Early prototype · Never miss an opportunity again.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const load = key => {
+  try { return JSON.parse(localStorage.getItem("leadpro_" + key)) || []; }
+  catch { return []; }
+};
+const save = (key, value) =>
+  localStorage.setItem("leadpro_" + key, JSON.stringify(value));
+
+let jobs = load("jobs");
+let wanted = load("wanted");
+let providers = load("providers");
+let reviews = load("reviews");
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+
+function showTab(id) {
+  document.querySelectorAll("main section").forEach(s =>
+    s.classList.toggle("active", s.id === id));
+  document.querySelectorAll("nav button").forEach(b =>
+    b.classList.toggle("active", b.dataset.tab === id));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll("nav button").forEach(b =>
+  b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+function renderJobs() {
+  const q = $("jobSearch").value.toLowerCase();
+  const city = $("jobCity").value.toLowerCase();
+  const list = jobs.filter(j =>
+    (j.title+" "+j.category+" "+j.description).toLowerCase().includes(q) &&
+    j.location.toLowerCase().includes(city));
+  $("jobList").innerHTML = list.length ? list.slice().reverse().map(j => `
+    <div class="card">
+      <span class="tag">${escapeHTML(j.category)}</span>
+      <h3>${escapeHTML(j.title)}</h3>
+      <p>${escapeHTML(j.description)}</p>
+      <p>📍 ${escapeHTML(j.location)}</p>
+      ${j.budget ? `<p class="price">Budget: $${escapeHTML(j.budget)} CAD</p>` : ""}
+      <p class="muted">Posted ${escapeHTML(j.date)}</p>
+      <button class="secondary" onclick="contact('${escapeHTML(j.contact)}')">Contact customer</button>
+    </div>`).join("") : '<div class="card empty">No jobs found yet. Be the first to post one.</div>';
+}
+$("jobSearch").addEventListener("input", renderJobs);
+$("jobCity").addEventListener("input", renderJobs);
+
+$("jobForm").addEventListener("submit", e => {
+  e.preventDefault();
+  jobs.push({
+    id:Date.now(),title:$("jobTitle").value.trim(),
+    category:$("jobCategory").value,
+    description:$("jobDescription").value.trim(),
+    location:$("jobLocation").value.trim(),
+    budget:$("jobBudget").value,
+    contact:$("jobContact").value.trim(),
+    date:new Date().toLocaleDateString()
+  });
+  save("jobs",jobs); e.target.reset(); renderJobs();
+  showTab("jobs"); alert("Job added to this browser's prototype.");
+});
+
+$("wantedForm").addEventListener("submit", e => {
+  e.preventDefault();
+  wanted.push({
+    title:$("wantedTitle").value.trim(),
+    details:$("wantedDetails").value.trim(),
+    city:$("wantedCity").value.trim(),
+    contact:$("wantedContact").value.trim()
+  });
+  save("wanted",wanted);e.target.reset();renderWanted();
+  alert("Help Wanted post added.");
+});
+
+function renderWanted() {
+  $("wantedList").innerHTML = wanted.length ? wanted.slice().reverse().map(w=>`
+    <div class="card"><h3>${escapeHTML(w.title)}</h3>
+    <p>${escapeHTML(w.details)}</p><p>📍 ${escapeHTML(w.city)}</p>
+    <button class="secondary" onclick="contact('${escapeHTML(w.contact)}')">Contact poster</button></div>
+  `).join("") : '<div class="card empty">No Help Wanted posts yet.</div>';
+}
+
+function rating(p) {
+  const r=reviews.filter(x=>x.provider===p.id);
+  return {count:r.length,avg:r.length?r.reduce((s,x)=>s+x.stars,0)/r.length:0};
+}
+function renderProviders() {
+  $("providerList").innerHTML = providers.length ? providers.map(p=>{
+    const r=rating(p);
+    const removed=r.count>=50 && r.avg<3;
+    return `<div class="card"><h3>${escapeHTML(p.name)}</h3>
+    <p>${escapeHTML(p.service)} · ${escapeHTML(p.city)}</p>
+    <p class="stars">${r.count ? "★".repeat(Math.round(r.avg)) : "☆☆☆☆☆"}
+    <span class="muted">${r.count ? r.avg.toFixed(1)+" / 5 · "+r.count+" reviews" : "No reviews yet"}</span></p>
+    ${removed?'<p><b>Not eligible for listing under the prototype rating rule.</b></p>':
+    `<button class="secondary" onclick="contact('${escapeHTML(p.contact)}')">Contact provider</button>
+    <button class="secondary" onclick="chooseReview('${p.id}')">Write a review</button>`}</div>`;
+  }).join("") : '<div class="card empty">No registered providers yet.</div>';
+  $("reviewProvider").innerHTML=providers.map(p=>
+    `<option value="${p.id}">${escapeHTML(p.name)}</option>`).join("");
+}
+function chooseReview(id) {
+  $("reviewProvider").value=id;showTab("reviews");
+}
+$("providerForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  providers.push({
+    id:String(Date.now()),name:$("providerName").value.trim(),
+    service:$("providerService").value.trim(),
+    city:$("providerCity").value.trim(),
+    contact:$("providerContact").value.trim()
+  });
+  save("providers",providers);e.target.reset();
+  renderProviders();alert("Provider profile added to this browser.");
+});
+$("reviewForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const id=$("reviewProvider").value;
+  if(!id){alert("Register a provider first.");return;}
+  reviews.push({provider:id,stars:Number($("reviewStars").value),
+    text:$("reviewText").value.trim(),date:new Date().toLocaleDateString()});
+  save("reviews",reviews);e.target.reset();
+  renderProviders();renderReviews();
+  alert("Review saved in this browser's prototype.");
+});
+function renderReviews(){
+  $("reviewList").innerHTML=reviews.length?reviews.slice().reverse().map(r=>{
+    const p=providers.find(x=>x.id===r.provider);
+    return `<div class="card"><h3>${escapeHTML(p?p.name:"Provider")}</h3>
+    <p class="stars">${"★".repeat(r.stars)}${"☆".repeat(5-r.stars)}</p>
+    <p>${escapeHTML(r.text)}</p><p class="muted">${escapeHTML(r.date)}</p></div>`;
+  }).join(""):'<div class="card empty">No reviews submitted yet.</div>';
+}
+function contact(email){
+  if(email) window.location.href="mailto:"+email;
+}
+renderJobs();renderWanted();renderProviders();renderReviews();
+</script>
+</body>
+</html>
