@@ -48,10 +48,10 @@ footer{text-align:center;color:#64748b;font-size:12px;padding:25px}
   <button data-tab="post">Post a Job</button>
   <button data-tab="wanted">Help Wanted</button>
   <button data-tab="providers">Providers</button>
-  <button data-tab="reviews">Reviews</button>
+  <button data-tab="reviews">Reviews</button><button data-tab="account">Account</button>
 </nav>
 
-<main>
+<main><div id="sessionBar" class="card">Checking account…</div><div id="notice" role="status"></div><section id="account"><div class="card"><h2>Sign in or create an account</h2><form id="authForm"><label>Email</label><input id="email" type="email" required autocomplete="email"><label>Password</label><input id="password" type="password" minlength="6" required autocomplete="current-password"><button class="primary">Sign in</button><button class="secondary" id="signup" type="button">Create account</button></form><button id="signout" class="secondary" hidden>Sign out</button></div></section>
 <section id="jobs" class="active">
   <div class="card">
     <h2>Find your next opportunity</h2>
@@ -159,146 +159,38 @@ footer{text-align:center;color:#64748b;font-size:12px;padding:25px}
 
 <footer>Lead Pro · Early prototype · Never miss an opportunity again.</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js"></script>
 <script>
-const $ = id => document.getElementById(id);
-const load = key => {
-  try { return JSON.parse(localStorage.getItem("leadpro_" + key)) || []; }
-  catch { return []; }
-};
-const save = (key, value) =>
-  localStorage.setItem("leadpro_" + key, JSON.stringify(value));
-
-let jobs = load("jobs");
-let wanted = load("wanted");
-let providers = load("providers");
-let reviews = load("reviews");
-
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  })[c]);
+const db=window.supabase.createClient("https://vzwbtqxijbxrfhwrhhua.supabase.co","sb_publishable_Tg71PIgFvhcOYxWzXpl3Hg_TUuzGhUB");
+const $=id=>document.getElementById(id),safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let user=null,jobs=[],wanted=[],providers=[],reviews=[];
+function message(s){$("notice").textContent=s;setTimeout(()=>$("notice").textContent="",7000)}
+function tab(id){if(id==="post"&&!user){message("Sign in to post.");id="account"}document.querySelectorAll("main section").forEach(s=>s.classList.toggle("active",s.id===id));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));history.replaceState(null,"","#"+id)}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+window.onhashchange=()=>tab(location.hash.slice(1)||"jobs");
+function sessionUI(){$("sessionBar").innerHTML=user?"Signed in: "+safe(user.email):"Browsing publicly — sign in to post";$("authForm").hidden=!!user;$("signout").hidden=!user;if(!user&&location.hash==="#post")tab("account")}
+db.auth.onAuthStateChange((e,s)=>{user=s?.user??null;sessionUI()});
+$("authForm").onsubmit=async e=>{e.preventDefault();const {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});message(error?error.message:"Signed in.");if(!error)tab("jobs")};
+$("signup").onclick=async()=>{if(!$("authForm").reportValidity())return;const {data,error}=await db.auth.signUp({email:$("email").value.trim(),password:$("password").value,options:{emailRedirectTo:location.origin+location.pathname+"#account"}});message(error?error.message:data.session?"Account created.":"Check your email to confirm your account.")};
+$("signout").onclick=async()=>{const {error}=await db.auth.signOut();if(error)message(error.message)};
+async function refresh(){
+ const results=await Promise.all([db.from("job_posts").select("*").order("created_at",{ascending:false}),db.from("help_wanted").select("*").order("created_at",{ascending:false}),db.from("profiles").select("*"),db.from("reviews").select("*").order("created_at",{ascending:false})]);
+ if(results.some(r=>r.error))message("Database error: "+results.find(r=>r.error).error.message);
+ [jobs,wanted,providers,reviews]=results.map(r=>r.data||[]);renderJobs();renderWanted();renderProviders();renderReviews();
 }
-
-function showTab(id) {
-  document.querySelectorAll("main section").forEach(s =>
-    s.classList.toggle("active", s.id === id));
-  document.querySelectorAll("nav button").forEach(b =>
-    b.classList.toggle("active", b.dataset.tab === id));
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-document.querySelectorAll("nav button").forEach(b =>
-  b.addEventListener("click", () => showTab(b.dataset.tab)));
-
-function renderJobs() {
-  const q = $("jobSearch").value.toLowerCase();
-  const city = $("jobCity").value.toLowerCase();
-  const list = jobs.filter(j =>
-    (j.title+" "+j.category+" "+j.description).toLowerCase().includes(q) &&
-    j.location.toLowerCase().includes(city));
-  $("jobList").innerHTML = list.length ? list.slice().reverse().map(j => `
-    <div class="card">
-      <span class="tag">${escapeHTML(j.category)}</span>
-      <h3>${escapeHTML(j.title)}</h3>
-      <p>${escapeHTML(j.description)}</p>
-      <p>📍 ${escapeHTML(j.location)}</p>
-      ${j.budget ? `<p class="price">Budget: $${escapeHTML(j.budget)} CAD</p>` : ""}
-      <p class="muted">Posted ${escapeHTML(j.date)}</p>
-      <button class="secondary" onclick="contact('${escapeHTML(j.contact)}')">Contact customer</button>
-    </div>`).join("") : '<div class="card empty">No jobs found yet. Be the first to post one.</div>';
-}
-$("jobSearch").addEventListener("input", renderJobs);
-$("jobCity").addEventListener("input", renderJobs);
-
-$("jobForm").addEventListener("submit", e => {
-  e.preventDefault();
-  jobs.push({
-    id:Date.now(),title:$("jobTitle").value.trim(),
-    category:$("jobCategory").value,
-    description:$("jobDescription").value.trim(),
-    location:$("jobLocation").value.trim(),
-    budget:$("jobBudget").value,
-    contact:$("jobContact").value.trim(),
-    date:new Date().toLocaleDateString()
-  });
-  save("jobs",jobs); e.target.reset(); renderJobs();
-  showTab("jobs"); alert("Job added to this browser's prototype.");
-});
-
-$("wantedForm").addEventListener("submit", e => {
-  e.preventDefault();
-  wanted.push({
-    title:$("wantedTitle").value.trim(),
-    details:$("wantedDetails").value.trim(),
-    city:$("wantedCity").value.trim(),
-    contact:$("wantedContact").value.trim()
-  });
-  save("wanted",wanted);e.target.reset();renderWanted();
-  alert("Help Wanted post added.");
-});
-
-function renderWanted() {
-  $("wantedList").innerHTML = wanted.length ? wanted.slice().reverse().map(w=>`
-    <div class="card"><h3>${escapeHTML(w.title)}</h3>
-    <p>${escapeHTML(w.details)}</p><p>📍 ${escapeHTML(w.city)}</p>
-    <button class="secondary" onclick="contact('${escapeHTML(w.contact)}')">Contact poster</button></div>
-  `).join("") : '<div class="card empty">No Help Wanted posts yet.</div>';
-}
-
-function rating(p) {
-  const r=reviews.filter(x=>x.provider===p.id);
-  return {count:r.length,avg:r.length?r.reduce((s,x)=>s+x.stars,0)/r.length:0};
-}
-function renderProviders() {
-  $("providerList").innerHTML = providers.length ? providers.map(p=>{
-    const r=rating(p);
-    const removed=r.count>=50 && r.avg<3;
-    return `<div class="card"><h3>${escapeHTML(p.name)}</h3>
-    <p>${escapeHTML(p.service)} · ${escapeHTML(p.city)}</p>
-    <p class="stars">${r.count ? "★".repeat(Math.round(r.avg)) : "☆☆☆☆☆"}
-    <span class="muted">${r.count ? r.avg.toFixed(1)+" / 5 · "+r.count+" reviews" : "No reviews yet"}</span></p>
-    ${removed?'<p><b>Not eligible for listing under the prototype rating rule.</b></p>':
-    `<button class="secondary" onclick="contact('${escapeHTML(p.contact)}')">Contact provider</button>
-    <button class="secondary" onclick="chooseReview('${p.id}')">Write a review</button>`}</div>`;
-  }).join("") : '<div class="card empty">No registered providers yet.</div>';
-  $("reviewProvider").innerHTML=providers.map(p=>
-    `<option value="${p.id}">${escapeHTML(p.name)}</option>`).join("");
-}
-function chooseReview(id) {
-  $("reviewProvider").value=id;showTab("reviews");
-}
-$("providerForm").addEventListener("submit",e=>{
-  e.preventDefault();
-  providers.push({
-    id:String(Date.now()),name:$("providerName").value.trim(),
-    service:$("providerService").value.trim(),
-    city:$("providerCity").value.trim(),
-    contact:$("providerContact").value.trim()
-  });
-  save("providers",providers);e.target.reset();
-  renderProviders();alert("Provider profile added to this browser.");
-});
-$("reviewForm").addEventListener("submit",e=>{
-  e.preventDefault();
-  const id=$("reviewProvider").value;
-  if(!id){alert("Register a provider first.");return;}
-  reviews.push({provider:id,stars:Number($("reviewStars").value),
-    text:$("reviewText").value.trim(),date:new Date().toLocaleDateString()});
-  save("reviews",reviews);e.target.reset();
-  renderProviders();renderReviews();
-  alert("Review saved in this browser's prototype.");
-});
-function renderReviews(){
-  $("reviewList").innerHTML=reviews.length?reviews.slice().reverse().map(r=>{
-    const p=providers.find(x=>x.id===r.provider);
-    return `<div class="card"><h3>${escapeHTML(p?p.name:"Provider")}</h3>
-    <p class="stars">${"★".repeat(r.stars)}${"☆".repeat(5-r.stars)}</p>
-    <p>${escapeHTML(r.text)}</p><p class="muted">${escapeHTML(r.date)}</p></div>`;
-  }).join(""):'<div class="card empty">No reviews submitted yet.</div>';
-}
-function contact(email){
-  if(email) window.location.href="mailto:"+email;
-}
-renderJobs();renderWanted();renderProviders();renderReviews();
+function renderJobs(){const q=$("jobSearch").value.toLowerCase(),city=$("jobCity").value.toLowerCase();const found=jobs.filter(j=>j.status==="open"&&(j.title+" "+j.description+" "+j.category).toLowerCase().includes(q)&&j.location.toLowerCase().includes(city));$("jobList").innerHTML=found.map(j=>'<div class="card"><span class="tag">'+safe(j.category)+'</span><h3>'+safe(j.title)+'</h3><p>'+safe(j.description)+'</p><p>📍 '+safe(j.location)+'</p><p class="price">'+(j.budget===null?"":("$"+safe(j.budget)+" CAD"))+'</p></div>').join("")||'<div class="card empty">No jobs yet.</div>'}
+$("jobSearch").oninput=renderJobs;$("jobCity").oninput=renderJobs;
+$("jobForm").onsubmit=async e=>{e.preventDefault();if(!user)return tab("account");const {error}=await db.from("job_posts").insert({customer_id:user.id,title:$("jobTitle").value.trim(),description:$("jobDescription").value.trim(),category:$("jobCategory").value,location:$("jobLocation").value.trim(),budget:$("jobBudget").value?Number($("jobBudget").value):null});if(error)return message(error.message);e.target.reset();await refresh();tab("jobs");message("Job published.")};
+$("wantedForm").onsubmit=async e=>{e.preventDefault();if(!user)return tab("account");const {error}=await db.from("help_wanted").insert({user_id:user.id,description:$("wantedTitle").value.trim()+" — "+$("wantedDetails").value.trim(),location:$("wantedCity").value.trim()});if(error)return message(error.message);e.target.reset();await refresh();message("Help Wanted published.")};
+function renderWanted(){$("wantedList").innerHTML=wanted.map(w=>'<div class="card"><p>'+safe(w.description)+'</p><p>📍 '+safe(w.location)+'</p></div>').join("")||'<div class="card empty">No Help Wanted posts.</div>'}
+const rating=id=>{const rs=reviews.filter(r=>r.provider_id===id);return {n:rs.length,avg:rs.length?rs.reduce((a,r)=>a+r.rating,0)/rs.length:0}};
+function renderProviders(){const ps=providers.filter(p=>["provider","both"].includes(p.role));$("providerList").innerHTML=ps.filter(p=>{const r=rating(p.id);return r.n<50||r.avg>=3}).map(p=>{const r=rating(p.id);return '<div class="card"><h3>'+safe(p.display_name)+'</h3><p class="stars">'+(r.n?r.avg.toFixed(1)+" ★ ("+r.n+")":"No reviews")+'</p></div>'}).join("")||'<div class="card empty">No providers registered yet.</div>';$("reviewProvider").innerHTML=ps.filter(p=>{const r=rating(p.id);return r.n<50||r.avg>=3}).map(p=>'<option value="'+safe(p.id)+'">'+safe(p.display_name)+'</option>').join("")}
+$("providerForm").onsubmit=async e=>{e.preventDefault();if(!user)return tab("account");const {error}=await db.from("profiles").upsert({id:user.id,display_name:$("providerName").value.trim(),role:"provider"},{onConflict:"id"});if(error)return message(error.message);e.target.reset();await refresh();message("Provider name registered. Service details are not yet supported by the database.")};
+$("reviewForm").onsubmit=async e=>{e.preventDefault();if(!user)return tab("account");const provider_id=$("reviewProvider").value;if(!provider_id)return message("Choose a provider.");if(provider_id===user.id)return message("You cannot review yourself.");const {error}=await db.from("reviews").insert({customer_id:user.id,provider_id,rating:Number($("reviewStars").value),comment:$("reviewText").value.trim()});if(error)return message(error.message);e.target.reset();await refresh();message("Review posted.")};
+function renderReviews(){$("reviewList").innerHTML=reviews.map(r=>'<div class="card"><p class="stars">'+("★".repeat(r.rating))+'</p><p>'+safe(r.comment)+'</p></div>').join("")||'<div class="card empty">No reviews yet.</div>'}
+for(const id of ["jobContact","wantedContact","providerService","providerCity","providerContact"]){$(id).required=false;$(id).hidden=true;const label=document.querySelector('label[for="'+id+'"]');if(label)label.hidden=true}
+$("jobContact").value="";$("wantedContact").value="";
+(async()=>{const {data}=await db.auth.getUser();user=data.user;sessionUI();await refresh();tab(location.hash.slice(1)||"jobs")})();
 </script>
 </body>
 </html>
